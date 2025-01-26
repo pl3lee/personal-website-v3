@@ -1,8 +1,78 @@
 ---
-title: "Implementing OAuth in a React SPA with Go Backend"
+title: "Building Secure Authentication: Implementing OAuth in a React SPA with Go Backend"
 publishedAt: "2025-01-26"
-summary: "Implementing OAuth is not as hard as you think"
+summary: "A practical guide to implementing OAuth2.0 authentication in modern web applications"
 tag: "Technology"
 ---
 
 Authentication/authorization was one of the topics that haunted me the most when I started web development. I remember spending a whole week working on auth, just to give up and use Firebase Auth.
+
+The OAuth protocol in particular seemed complex at first glance. With its multiple flows, token types, and security considerations, the learning curve appeared steep. However, understanding and implementing OAuth is an essential skill for modern web developers.
+
+While I was working on my side project [UWPlan](https://uwplan.com), thinking that I wanted to launch it as quickly as possible, I went for [Auth.js](https://authjs.dev/). To my surprise, once I configured my Google and Github OAuth apps, things just worked! I was proud of myself, since I actually got a proper auth system working in one of my projects! However, I felt guilty afterwards, as Auth.js is like magic, where every complexity is abstracted away, and I did not really understand anything that about auth. 
+
+After the launch, I thought to myself, did I really learn about auth in this project? No! What happens if I want to build an app in the future that does not use Next.js? What if I actually have a separate backend server that is not in Node.js? These questions kept popping into my head, so I decided to properly learn OAuth once and for all.
+
+Before diving into the code, let's explore some concepts
+
+## Concepts
+### Authentication/Authorization
+Authentication refers to knowing WHO we are, and authorization refers to know WHAT we CAN do.
+
+So, authentication is the process of entering our email/password, and the server acknowledging that we are who we claim to be by allowing us to login.
+
+Authorization happens when we try to perform some action on the website (say editing a post). The server already knows who we are, so the server checks whether we are permitted (authorized) to perform that action.
+
+### Json Web Tokens (JWTs)
+JWT allows security information to be shared between a client and server, shared as claims (an encoded JSON object).
+
+User information is saved in the token itself, so they are compact and self-contained.
+
+Typically, a server signs a JWT using their own secret key (think of physically signing a document), and sends the JWT to the client. If there is a malicious client that attempts to modify his own information in the JWT (like editing his own role to be admin), then the signature will be invalid. Thus, the server would know that the JWT was tampered with, and disregards that information.
+
+JWTs are used for access tokens (explained below).
+
+### Access Tokens and Refresh Tokens
+Access tokens is mainly for authorization. An access token is like a employee badge. Only employees can go into the office building, similarly, only logged in users are able to perform some action on the website. With the access token, it signifies to the server that the user is logged in.
+
+Access tokens typically use JWTs. Here is what happens when a user logs in:
+1. Client (user's browser) sends login request along with his credentials to the server.
+2. Server verifies the credentials, and creates an access token in the form of a JWT in the response to the client.
+3. (Optional) The server stores the access token into the cookie of the response to the client.
+4. Client receives the access token in the response, and stores it securely (if it is not in a cookie). If the access token is in a cookie, the client does not have to do anything.
+5. Client sends a request to the server, asking to perform some protected action (say creating a post). The client sends the JWT to the server as well.
+6. The server verifies the JWT signature, then extracts the user information from the JWT. 
+7. If the access token has not expired, the server performs that action for the user. Otherwise, the user is logged out.
+
+One benefit of using JWTs as access tokens is that the server does not have to check the database for user information for every request, since the JWT itself contains the user information needed. This keeps the server fast.
+
+However, there is one problem. What happens when we want to revoke a user's access (let's say when the user changes their password)? Can we revoke the access token? Turns out, we cannot revoke a JWT. Then wouldn't non-revokable access tokens be a security risk? Well, we can set the access token to have a short expiration time (e.g. 5 minutes). This way, even if a hacker obtains someone's access tokens, he won't be able to do much about it.
+
+While this sounds good, this causes the user to be logged out every 5 minutes, which can't be a good experience. This is where refresh tokens come in.
+
+Refresh tokens are just random strings stored in the server's database that is associated to a user.
+1. When the client logs in, the server, in addition to sending the JWT access token, also generates a refresh token and sends it back to the client.
+2. The server stores the refresh token in the database.
+3. The client sends both access token and refresh token when he makes any requests.
+4. If the server finds that the access token has already expired, the server will then check the refresh token against the database to see if it expired. 
+5. If the client has a valid refresh token, then the server will create another access token for the client, send it back, and redirect the client to send the original request again with the new access token.
+6. If the client's refresh token has expired, the client is logged out.
+
+Since refresh tokens are stored in the database, it allows the server to revoke them easily. This gives us best of both worlds:
+1. Short access tokens for security
+2. Refresh tokens for user experience, as users do not have to log in every few minutes
+
+### OAuth 2.0 Authorization Code Flow
+Note that in OAuth 2.0, the OAuth provider (say Google) does not provide us with access tokens and refresh tokens. We (the server) are responsible for that. The primary purpose of the OAuth provider is just to let us know who the user is.
+
+In OAuth 2.0, there are many "flows" that are used depending on security and application needs. We will talk about the most popular authorization code flow. Here is how it works:
+1. Client initiates login by clicking a login button in our frontend application. The client is redirected to the Google OAuth login screen.
+2. User logs in, and Google redirects the client back to our frontend application, and in addition, gives an **authorization code** to the client.
+3. The client makes a POST request, sending the authorization code to the backend server.
+4. The backend server sends the authorization code to a Google OAuth endpoint.
+5. Google checks that the authorization code is correct, and sends the user information back to the backend server.
+6. The backend server now has the user's information. It creates a JWT access token using the user's information, and a refresh token, then sets them in cookies in the response to the client.
+7. The client now automatically sends access + refresh tokens on every request to the server, and it now considered logged in.
+
+
+WIP
