@@ -1,24 +1,24 @@
 import { InlineCode } from "@/once-ui/components";
 
 const person = {
-  firstName: "Selene",
-  lastName: "Yu",
+  firstName: "Billy",
+  lastName: "Lee",
   get name() {
     return `${this.firstName} ${this.lastName}`;
   },
-  role: "Design Engineer",
+  role: "Full Stack Developer",
   avatar: "/images/avatar.jpg",
-  location: "Asia/Jakarta", // Expecting the IANA time zone identifier, e.g., 'Europe/Vienna'
-  languages: ["English", "Bahasa"], // optional: Leave the array empty if you don't want to display languages
+  location: "America/Toronto", // Expecting the IANA time zone identifier, e.g., 'Europe/Vienna'
+  languages: [], // optional: Leave the array empty if you don't want to display languages
 };
 
 const newsletter = {
-  display: true,
+  display: false,
   title: <>Subscribe to {person.firstName}'s Newsletter</>,
   description: (
     <>
-      I occasionally write about design, technology, and share thoughts on the intersection of
-      creativity and engineering.
+      I occasionally write about design, technology, and share thoughts on the
+      intersection of creativity and engineering.
     </>
   ),
 };
@@ -29,22 +29,22 @@ const social = [
   {
     name: "GitHub",
     icon: "github",
-    link: "https://github.com/once-ui-system/nextjs-starter",
+    link: "https://github.com/pl3lee",
   },
   {
     name: "LinkedIn",
     icon: "linkedin",
-    link: "https://www.linkedin.com/company/once-ui/",
+    link: "https://www.linkedin.com/in/billy-pl-lee/",
   },
-  {
-    name: "X",
-    icon: "x",
-    link: "",
-  },
+  // {
+  //   name: "X",
+  //   icon: "x",
+  //   link: "",
+  // },
   {
     name: "Email",
     icon: "email",
-    link: "mailto:example@gmail.com",
+    link: "mailto:billy.pl.lee@gmail.com",
   },
 ];
 
@@ -52,11 +52,11 @@ const home = {
   label: "Home",
   title: `${person.name}'s Portfolio`,
   description: `Portfolio website showcasing my work as a ${person.role}`,
-  headline: <>Design engineer and builder</>,
+  headline: <>Full Stack Developer</>,
   subline: (
     <>
-      I'm Selene, a design engineer at <InlineCode>FLY</InlineCode>, where I craft intuitive
-      <br /> user experiences. After hours, I build my own projects.
+      I'm Billy, a recent graduate from the University of Waterloo, and a
+      current part time student at Georgia Tech.
     </>
   ),
 };
@@ -73,7 +73,7 @@ const about = {
     display: true,
   },
   calendar: {
-    display: true,
+    display: false,
     link: "https://cal.com",
   },
   intro: {
@@ -81,9 +81,21 @@ const about = {
     title: "Introduction",
     description: (
       <>
-        Selene is a Jakarta-based design engineer with a passion for transforming complex challenges
-        into simple, elegant design solutions. Her work spans digital interfaces, interactive
-        experiences, and the convergence of design and technology.
+        <p>
+          I am a Math graduate from the University of Waterloo, and I am
+          currently working on my Master's in Computer Science at Georgia Tech.
+        </p>
+        <p>
+          My enthusiasm for solving real-world problems led me to create UWPlan,
+          a Next.js-powered degree planning tool that serves over 500 daily
+          users, helping students map their courses and visualize their academic
+          progress.
+        </p>
+        <p>
+          I love to tinker with technology. I built a home server using Unraid
+          and have set up numerous self-hosted services for me and my friends'
+          needs.
+        </p>
       </>
     ),
   },
@@ -92,41 +104,95 @@ const about = {
     title: "Work Experience",
     experiences: [
       {
-        company: "FLY",
-        timeframe: "2022 - Present",
-        role: "Senior Design Engineer",
+        company: "University of Waterloo",
+        timeframe: "Jan 2024 - May 2024",
+        role: "Lead Developer",
         achievements: [
           <>
-            Redesigned the UI/UX for the FLY platform, resulting in a 20% increase in user
-            engagement and 30% faster load times.
+            Led the development of a Next.js-based web platform for a
+            figures-of-speech research group, serving 10+ researchers and
+            enabling user submissions and annotations of figure instances.
           </>,
           <>
-            Spearheaded the integration of AI tools into design workflows, enabling designers to
-            iterate 50% faster.
+            Revamped the CI/CD pipeline using GitLab, Docker, and Docker
+            Compose, reducing deployment time by 70%.
+          </>,
+          <>
+            Established a robust staging environment to improve testing
+            efficiency and reduce production defects by 90%, ensuring a more
+            reliable and high-quality development workflow.
+          </>,
+          <>
+            Coordinated an Agile workflow, leading weekly stand-ups and code
+            reviews for a team of 5 developers, and implemented a documentation
+            site to maintain comprehensive, up-to-date project documentation.
           </>,
         ],
-        images: [
-          // optional: leave the array empty if you don't want to display images
-          {
-            src: "/images/projects/project-01/cover-01.jpg",
-            alt: "Once UI Project",
-            width: 16,
-            height: 9,
-          },
-        ],
+        images: [],
       },
       {
-        company: "Creativ3",
-        timeframe: "2018 - 2022",
-        role: "Lead Designer",
+        company: "University of Waterloo",
+        timeframe: "Sept 2023 - Dec 2023",
+        role: "Full Stack Developer",
         achievements: [
           <>
-            Developed a design system that unified the brand across multiple platforms, improving
-            design consistency by 40%.
+            Implemented advanced features like dynamic highlighting
+            functionality with rich text support using Tiptap.
           </>,
           <>
-            Led a cross-functional team to launch a new product line, contributing to a 15% increase
-            in overall company revenue.
+            Reduced page load time by 80% by consolidating data retrieval to a
+            single API call with server-side props, utilizing Context API for
+            efficient data distribution, and implementing pagination to minimize
+            data overload.
+          </>,
+          <>
+            Engineered and tested 10 Golang REST endpoints backed by MySQL,
+            improving query response times by 20%.
+          </>,
+          <>
+            Authored comprehensive tests using Jest and React Testing Library,
+            increasing code coverage by 30%.
+          </>,
+        ],
+        images: [],
+      },
+      {
+        company: "Hewlett Packard Enterprise",
+        timeframe: "May 2023 - Aug 2023",
+        role: "Software Developer Intern",
+        achievements: [
+          <>
+            Developed and launched a React.js-based demo portal viewed by 10
+            internal stakeholders, effectively showcasing HPE GreenLake
+            solutions and reducing the average demo preparation time by 50%.
+          </>,
+          <>
+            Automated and optimized demo workflows with Python and Bash scripts,
+            and provisioned VM environments for demonstrations, reducing manual
+            setup time by 80%.
+          </>,
+        ],
+        images: [],
+      },
+      {
+        company: "Bolee Machine Tool Ltd.",
+        timeframe: "Apr 2023 - May 2023",
+        role: "Software Developer Intern",
+        achievements: [
+          <>
+            Tackled the challenge of time-consuming manual product entries on
+            the company's WordPress e-commerce site, previously reliant on a
+            lengthy admin GUI process of around 5 minutes per product.
+          </>,
+          <>
+            Revolutionized product management by developing a Python-based
+            automation tool using Selenium for the company's WordPress
+            e-commerce site; achieved a 99% reduction in time required for bulk
+            price updates.
+          </>,
+          <>
+            Managed and configured company VPN and NAS storage servers to
+            enhance data security and accessibility.
           </>,
         ],
         images: [],
@@ -138,22 +204,40 @@ const about = {
     title: "Studies",
     institutions: [
       {
-        name: "University of Jakarta",
-        description: <>Studied software engineering.</>,
+        name: "Georgia Institute of Technology",
+        description: (
+          <>
+            <p>Honours Bachelor of Mathematics</p>
+            <p>Master of Science in Computer Science</p>
+            <p>Specialization in Computing Systems</p>
+          </>
+        ),
       },
       {
-        name: "Build the Future",
-        description: <>Studied online marketing and personal branding.</>,
+        name: "University of Waterloo",
+        description: (
+          <>
+            <p>Honours Bachelor of Mathematics</p>
+            <p>Dean's Honour (GPA: 3.9/4.0)</p>
+            <p>
+              Double Major in Computational Mathematics and Combinatorics &
+              Optimization
+            </p>
+            <p>Minor in Computer Science</p>
+          </>
+        ),
       },
     ],
   },
   technical: {
-    display: true, // set to false to hide this section
+    display: false, // set to false to hide this section
     title: "Technical skills",
     skills: [
       {
         title: "Figma",
-        description: <>Able to prototype in Figma with Once UI with unnatural speed.</>,
+        description: (
+          <>Able to prototype in Figma with Once UI with unnatural speed.</>
+        ),
         // optional: leave the array empty if you don't want to display images
         images: [
           {
@@ -172,7 +256,9 @@ const about = {
       },
       {
         title: "Next.js",
-        description: <>Building next gen apps with Next.js + Once UI + Supabase.</>,
+        description: (
+          <>Building next gen apps with Next.js + Once UI + Supabase.</>
+        ),
         // optional: leave the array empty if you don't want to display images
         images: [
           {
@@ -189,14 +275,14 @@ const about = {
 
 const blog = {
   label: "Blog",
-  title: "Writing about design and tech...",
+  title: "Writing about tech...",
   description: `Read what ${person.name} has been up to recently`,
   // Create new blog posts by adding a new .mdx file to app/blog/posts
   // All posts will be listed on the /blog route
 };
 
 const work = {
-  label: "Work",
+  label: "Projects",
   title: "My projects",
   description: `Design and dev projects by ${person.name}`,
   // Create new project pages by adding a new .mdx file to app/blog/posts
@@ -208,78 +294,7 @@ const gallery = {
   title: "My photo gallery",
   description: `A photo collection by ${person.name}`,
   // Images from https://pexels.com
-  images: [
-    {
-      src: "/images/gallery/img-01.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/img-02.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-03.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/img-04.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-05.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-06.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/img-07.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-08.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/img-09.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-10.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-11.jpg",
-      alt: "image",
-      orientation: "vertical",
-    },
-    {
-      src: "/images/gallery/img-12.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-13.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-    {
-      src: "/images/gallery/img-14.jpg",
-      alt: "image",
-      orientation: "horizontal",
-    },
-  ],
+  images: [],
 };
 
 export { person, social, newsletter, home, about, blog, work, gallery };
