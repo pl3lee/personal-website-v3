@@ -74,5 +74,976 @@ In OAuth 2.0, there are many "flows" that are used depending on security and app
 6. The backend server now has the user's information. It creates a JWT access token using the user's information, and a refresh token, then sets them in cookies in the response to the client.
 7. The client now automatically sends access + refresh tokens on every request to the server, and it now considered logged in.
 
+## Code Implementation
+With all concepts out of the way, let's try to OAuth 2.0 Authorization Code Flow!
 
-WIP
+### Creating a Google OAuth Client ID and Secret
+Before we start, we have to create a Google OAuth Client ID and Secret for our app.
+1. Go to https://console.cloud.google.com
+2. Create a new project
+3. In the sidebar, go to APIs & Services -> OAuth consent screen
+4. Setup the consent screen. You can leave the App domain and Authorized domains empty.
+5. Add scopes `.email`, `.profile`, and `openid`.
+6. Keep clicking continue until you're done, then go back to dashboard.
+7. Go to Credentials tab
+8. Click Create Credentials -> OAuth client ID
+9. Application type is Web application, for both authorized JavaScript origins and Authorized redirect URIs, set to `http://localhost:5173`
+10. Save, then save your client ID and secret in a file.
+
+### Frontend
+For the frontend, I will be Vite to create a TypeScript React application. For the router, I will be using Tanstack Router, though you can use whatever router you want as the overall logic is the same. For data fetching, I will also be using Tanstack Query. This app will have 2 pages:
+1. Home page, where the login/logout button is. The homepage will also show some protected information when logged in.
+2. Protected page. The user can only visit this page when he is logged in. Otherwise, he is redirected back to the home page.
+
+You can follow the Tanstack Router docs to see the installation instructions. After creating the React application, we will installing the following packages:
+```bash
+npm i @tanstack/react-query @react-oauth/google@latest
+```
+
+First, let's create a file `src/lib/api.ts` that contains the endpoints of our server:
+
+```typescript
+// fetches user's information, also used for checking if the user is currently logged in
+export const fetchMe = async () => {
+  const res = await fetch("http://localhost:3000/me", {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Not authenticated");
+  return res.json();
+};
+
+// fetches some protected info
+export const fetchProtectedInfo = async () => {
+  const res = await fetch("http://localhost:3000/protected/info", {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch protected info");
+  return res.json();
+};
+
+// logout
+export const logout = async () => {
+  const res = await fetch("http://localhost:3000/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to logout");
+  return res.json();
+};
+```
+
+Next, let's create a hook `src/hooks/useAuth.ts` that returns auth information
+
+```typescript
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
+import { fetchMe, logout } from '../lib/api';
+import { type User } from '../types/auth';
+
+export function useAuth() {
+  const queryClient = useQueryClient();
+
+  const { 
+    data: user, 
+    isLoading, 
+    error 
+  } = useQuery<User>({
+    queryKey: ['auth'],
+    queryFn: fetchMe,
+    retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
+
+  return {
+    user,
+    isLoading,
+    error,
+    logout: logoutMutation.mutate,
+    isLoggedIn: !!user,
+  };
+}
+```
+
+For convenience, I have also defined a type `User` in `src/types/auth.ts`:
+```typescript
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  googleId: string;
+}
+```
+
+Now, in `main.tsx`, let's add our providers:
+```typescript
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { routeTree } from "./routeTree.gen";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
+// Set up a Router instance
+const router = createRouter({
+  routeTree,
+  defaultPreload: "intent",
+});
+
+// Register things for typesafety
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
+const queryClient = new QueryClient();
+const rootElement = document.getElementById("app")!;
+const clientId = "REPLACE_WITH_YOUR_OWN_CLIENT_id";
+
+if (!rootElement.innerHTML) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <GoogleOAuthProvider clientId={clientId}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </GoogleOAuthProvider>
+  );
+}
+
+```
+Note that for production apps, you should store your Google Client ID in `.env` files.
+
+
+Now, for the home page, we have
+```typescript
+function HomeComponent() {
+  const { user, isLoading, logout, isLoggedIn } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: protectedInfo, isLoading: isLoadingProtected } = useQuery({
+    queryKey: ["protected"],
+    queryFn: fetchProtectedInfo,
+    enabled: isLoggedIn,
+  });
+
+  const login = useGoogleLogin({
+    flow: "auth-code",
+    redirect_uri: "http://localhost:5173",
+    onSuccess: async (codeResponse) => {
+      // codeResponse is the authorization code returned from Google
+      try {
+        const response = await fetch(
+          "http://localhost:3000/auth/google/callback",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ code: codeResponse.code }),
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Login failed");
+        }
+
+        const data = await response.json();
+        queryClient.invalidateQueries({ queryKey: ["auth"] });
+        console.log("auth data from api", data);
+      } catch (error) {
+        console.error("Login error:", error);
+      }
+    },
+    onError: (error) => {
+      console.error("Google login error:", error);
+    },
+  });
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  return (
+    <div>
+      {!isLoggedIn ? (
+        <button onClick={() => login()}>Login with Google</button>
+      ) : (
+        <div>
+          <h2>Welcome {user?.name}</h2>
+          <p>
+            Protected Info:{" "}
+            {isLoadingProtected
+              ? "Loading protected info"
+              : protectedInfo?.message}
+          </p>
+          <button onClick={() => logout()}>Logout</button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+Then in the protected page, we have
+```typescript
+import * as React from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "../hooks/useAuth";
+
+export const Route = createFileRoute("/protected")({
+  component: ProtectedComponent,
+});
+
+function ProtectedComponent() {
+  const { user, isLoading, logout, isLoggedIn } = useAuth();
+  const navigate = useNavigate();
+  if (!isLoading && !isLoggedIn) {
+    navigate({
+      to: "/",
+    });
+  }
+  return (
+    <div className="p-2">
+      <h3>
+        Protected page, you should not be able to view this if not logged in
+      </h3>
+    </div>
+  );
+}
+```
+
+Feel free to create a Navbar to link these two pages together.
+
+If you now run `npm run dev`, you should see the login to google button trigger a popup from Google. This is because we don't want our app to lose state when we get redirected to Google.
+
+However, we still have to setup our backend server in Go to get everything working.
+
+### Backend
+For the backend, we will use Go with Chi, SQLC for SQL queries, Goose for database migrations, and PostgreSQL.
+
+Note that in the code below, I will add explanation in comments. 
+
+#### Installing Dependencies
+Install Goose and SQLC:
+```bash
+go install github.com/pressly/goose/v3/cmd/goose@latest
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+```
+Then create a `docker-compose.yaml` for our database:
+```yaml
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: example
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+```
+
+Do `go mod init YOUR_PROJECT_NAME` to initialize your backend. Now, let's also install the other dependencies:
+```bash
+go get github.com/go-chi/chi/v5 github.com/go-chi/cors github.com/golang-jwt/jwt/v5 github.com/google/uuid github.com/joho/godotenv github.com/lib/pq golang.org/x/oauth2
+```
+
+Create a `sqlc.yaml` file in the root of the backend project folder:
+```yaml
+version: "2"
+sql:
+  - schema: "sql/schema"
+    queries: "sql/queries"
+    engine: "postgresql"
+    gen:
+      go:
+        out: "internal/database"
+```
+
+Create a `.env` file also in the root, replacing the Google variables with your own:
+```
+DB_URL="postgres://postgres:postgres@localhost:5432/example?sslmode=disable"
+AUTH_SECRET="secret"
+GOOGLE_CLIENT_ID="YOUR_CLIENT_ID"
+GOOGLE_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+```
+
+Now, do `docker compose up -d` to start the PostgreSQL database.
+
+#### Creating Schemas and SQL Queries
+
+Let's now write the SQL schema and queries. Create a directory `sql/schema`, and in the directory, create two files.
+
+`001_users.sql`:
+```sql
+-- +goose Up
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  google_id TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  email TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  picture TEXT NOT NULL
+);
+
+-- +goose Down
+DROP TABLE users;
+```
+
+`002_refresh_tokens.sql`:
+```sql
+-- +goose Up
+CREATE TABLE refresh_tokens (
+    token TEXT PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMP NOT NULL,
+    revoked_at TIMESTAMP DEFAULT NULL
+);
+
+-- +goose Down
+DROP TABLE refresh_tokens;
+```
+
+Then create a directory `sql/queries`, and create these two files:
+
+`users.sql`:
+```sql
+-- name: CreateUser :one
+INSERT INTO users(google_id, email, name, picture)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4
+)
+ON CONFLICT (google_id) 
+DO UPDATE SET 
+  email = $2,
+  name = $3,
+  picture = $4
+RETURNING *;
+
+-- name: GetUserById :one
+SELECT *
+FROM users
+WHERE id = $1;
+
+-- name: GetUserByGoogleId :one
+SELECT *
+FROM users
+WHERE google_id = $1;
+```
+
+`refresh_tokens.sql`:
+```sql
+-- name: StoreRefreshToken :one
+INSERT INTO refresh_tokens (
+    token,
+    user_id,
+    expires_at
+) VALUES (
+    $1,
+    $2,
+    $3
+)
+RETURNING token, user_id, created_at, updated_at, expires_at, revoked_at;
+
+-- name: GetRefreshToken :one
+SELECT token, user_id, created_at, updated_at, expires_at, revoked_at
+FROM refresh_tokens
+WHERE token = $1 AND (revoked_at IS NULL);
+
+-- name: RevokeToken :one
+UPDATE refresh_tokens
+SET 
+    revoked_at = NOW(),
+    updated_at = NOW()
+WHERE token = $1
+RETURNING token, user_id, created_at, updated_at, expires_at, revoked_at;
+
+-- name: InvalidateRefreshToken :exec
+DELETE FROM refresh_tokens WHERE user_id = $1;
+```
+
+Then, perform a migration by
+```bash
+cd sql/schema
+goose postgres postgres://postgres:postgres@localhost:5432/example?sslmode=disable up
+```
+
+Then go back to the backend root directory and do `sqlc generate` to generate the Go functions corresponding to the SQL queries:
+```bash
+cd ../../
+sqlc generate
+```
+You should now see an `internal/database` package. This is generated by SQLC, do not touch the code inside.
+
+
+#### Create utils Package
+Create an `internal/utils` package, and inside create a `json.go` file. This contains helper functions that respond with JSON or error:
+```go
+package utils
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func RespondWithError(w http.ResponseWriter, code int, msg string, err error) {
+	if err != nil {
+		log.Println(err)
+	}
+	if code > 499 {
+		log.Printf("Responding with 5XX error: %s", msg)
+	}
+	type errorResponse struct {
+		Error string `json:"error"`
+	}
+	RespondWithJSON(w, code, errorResponse{
+		Error: msg,
+	})
+}
+
+func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	dat, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %s", err)
+		w.WriteHeader(500)
+		return
+	}
+	w.WriteHeader(code)
+	w.Write(dat)
+}
+
+func DecodeResponse[T any](resp *http.Response, result *T) error {
+	if resp == nil {
+		return fmt.Errorf("nil response")
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return nil
+}
+
+```
+#### Create auth Package
+Create an `internal/auth` package. Inside, create the following files:
+
+`google.go`:
+```go
+package auth
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+)
+
+var googleApiUrl string = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+type GoogleUserInfo struct {
+	Sub           string `json:"sub"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+}
+
+func (g GoogleUserInfo) String() string {
+	return fmt.Sprintf("User{ID: %s, Name: %s, Email: %s}", g.Sub, g.Name, g.Email)
+}
+
+func (cfg *AuthConfig) exchangeCodeForToken(code string) (*oauth2.Token, error) {
+	oauth2Config := &oauth2.Config{
+		ClientID:     cfg.GoogleClientID,
+		ClientSecret: cfg.GoogleClientSecret,
+		RedirectURL:  "http://localhost:5173",
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.profile",
+			"https://www.googleapis.com/auth/userinfo.email",
+		},
+		Endpoint: google.Endpoint,
+	}
+
+	return oauth2Config.Exchange(context.Background(), code)
+}
+
+func getUserInfo(accessToken string) (*GoogleUserInfo, error) {
+	req, err := http.NewRequest("GET", googleApiUrl, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("google api returned status: %d", resp.StatusCode)
+	}
+
+	var userInfo GoogleUserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &userInfo, nil
+}
+
+```
+
+`jwt.go`:
+```go
+package auth
+
+import (
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Issuer:    "go-react",
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
+		Subject:   userID.String(),
+	})
+	signedToken, err := token.SignedString([]byte(tokenSecret))
+	if err != nil {
+		return "", err
+	}
+	return signedToken, nil
+}
+
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+	claimsStruct := &jwt.RegisteredClaims{}
+	// keyFunc is a function that returns the key used to validate the token. Therefore, it returns tokenSecret.
+	keyFunc := func(token *jwt.Token) (interface{}, error) {
+		if token.Method.Alg() != jwt.SigningMethodHS256.Name {
+			return nil, fmt.Errorf("Incorrect signing method")
+		}
+		return []byte(tokenSecret), nil
+	}
+
+	// Provide keyFunc to ParseWithClaims so that we can parse the token
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		claimsStruct,
+		keyFunc,
+	)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	// Extract userID from the claims
+	userID, err := token.Claims.GetSubject()
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	// turns userID string into UUID
+	userIDUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	return userIDUUID, nil
+}
+
+func (cfg *AuthConfig) handleRefreshToken(w http.ResponseWriter, r *http.Request) error {
+	refreshCookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		return fmt.Errorf("no refresh token")
+	}
+
+	// Verify refresh token in database
+	token, err := cfg.Db.GetRefreshToken(r.Context(), refreshCookie.Value)
+	if err != nil {
+		return fmt.Errorf("invalid refresh token")
+	}
+
+	if token.ExpiresAt.Before(time.Now()) {
+		return fmt.Errorf("refresh token expired")
+	}
+
+	// Issue new JWT
+	newJWT, err := MakeJWT(token.UserID, cfg.AuthSecret, time.Hour)
+	if err != nil {
+		return fmt.Errorf("error creating new JWT")
+	}
+
+	// Set new JWT cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    newJWT,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(time.Hour),
+	})
+
+	return nil
+}
+
+```
+
+`middleware.go`:
+```go
+package auth
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/pl3lee/go-react/server/internal/utils"
+)
+
+func (cfg *AuthConfig) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, err := r.Cookie("jwt")
+		if err != nil {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Can't get jwt from cookie", err)
+			return
+		}
+
+		userId, err := ValidateJWT(jwtCookie.Value, cfg.AuthSecret)
+		if err != nil {
+			// Check if token is expired
+			if err == jwt.ErrTokenExpired {
+				// Try refresh flow
+				if err := cfg.handleRefreshToken(w, r); err != nil {
+					utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized", err)
+					return
+				}
+				// After successful refresh, redirect to same endpoint
+				http.Redirect(w, r, r.URL.Path, http.StatusTemporaryRedirect)
+				return
+			}
+			// Handle non-expiration errors
+			utils.RespondWithError(w, http.StatusUnauthorized, "Invalid token", err)
+			return
+		}
+
+		// Valid token, proceed with request
+		// Add user ID to context
+		ctx := context.WithValue(r.Context(), "user_id", userId)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+```
+
+`refresh.go`:
+```go
+package auth
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+)
+
+func MakeRefreshToken() (string, error) {
+	// Allocate space for 32 bytes (256 bits) of random data
+	random := make([]byte, 32)
+	// writes random data into the slice
+	_, err := rand.Read(random)
+	if err != nil {
+		return "", fmt.Errorf("error in generating random string")
+	}
+	// encodes as hex
+	randomString := hex.EncodeToString(random)
+	return randomString, nil
+}
+```
+
+and finally `handlers.go`:
+```go
+package auth
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/pl3lee/go-react/server/internal/database"
+	"github.com/pl3lee/go-react/server/internal/utils"
+)
+
+type AuthConfig struct {
+	Db                 *database.Queries
+	AuthSecret         string
+	GoogleClientID     string
+	GoogleClientSecret string
+}
+
+func (cfg *AuthConfig) HandlerGoogleCallback(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Code string `json:"code"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request", err)
+		return
+	}
+
+	// Exchange code for tokens
+	token, err := cfg.exchangeCodeForToken(req.Code)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Token exchange failed", err)
+		return
+	}
+
+	// Get user info using access token
+	userInfo, err := getUserInfo(token.AccessToken)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to get user info", err)
+		return
+	}
+	fmt.Printf("%v logged in", userInfo)
+
+	// find user in database
+	userDb, err := cfg.Db.GetUserByGoogleId(r.Context(), userInfo.Sub)
+	if err != nil {
+		// user doesn't exist in database
+		// Save user info in database
+		userDb, err = cfg.Db.CreateUser(r.Context(), database.CreateUserParams{
+			GoogleID: userInfo.Sub,
+			Email:    userInfo.Email,
+			Name:     userInfo.Name,
+			Picture:  userInfo.Picture,
+		})
+		if err != nil {
+			utils.RespondWithError(w, http.StatusInternalServerError, "Error inserting into database", err)
+			return
+		}
+	}
+
+	var expiration time.Duration = time.Hour
+	// Create JWT
+	jwtToken, err := MakeJWT(userDb.ID, cfg.AuthSecret, expiration)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error creating JWT", err)
+		return
+	}
+	refreshToken, err := MakeRefreshToken()
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error creating refresh token", err)
+		return
+	}
+	_, err = cfg.Db.StoreRefreshToken(r.Context(), database.StoreRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    userDb.ID,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 60),
+	})
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error storing refresh token", err)
+		return
+	}
+
+	// Set jwt cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    jwtToken,
+		Path:     "/",
+		Domain:   "", // Empty for same-origin
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(expiration),
+	})
+
+	// Set refresh token cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/",
+		Domain:   "",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(time.Hour * 24 * 60),
+	})
+
+	utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"status": "success",
+		"user":   userDb,
+	})
+
+}
+
+func (cfg *AuthConfig) HandlerLogout(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context
+	userId := r.Context().Value("user_id").(uuid.UUID)
+
+	// Invalidate refresh token in database
+	if err := cfg.Db.InvalidateRefreshToken(r.Context(), userId); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Error invalidating refresh token", err)
+		return
+	}
+	// Clear cookies
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"status": "logged out",
+	})
+}
+
+func (cfg *AuthConfig) HandlerGetMe(w http.ResponseWriter, r *http.Request) {
+	userId := r.Context().Value("user_id").(uuid.UUID)
+
+	user, err := cfg.Db.GetUserById(r.Context(), userId)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, "User not found", err)
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"id":      user.ID,
+		"email":   user.Email,
+		"name":    user.Name,
+		"picture": user.Picture,
+	})
+}
+```
+
+
+#### Write main.go
+We now have all the necessary packages. So we can write `main.go`:
+```go
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"github.com/joho/godotenv"
+	"github.com/pl3lee/go-react/server/internal/auth"
+	"github.com/pl3lee/go-react/server/internal/database"
+	"github.com/pl3lee/go-react/server/internal/protected"
+
+	_ "github.com/lib/pq"
+)
+
+type config struct {
+	Db                 *database.Queries
+	AuthSecret         string
+	GoogleClientID     string
+	GoogleClientSecret string
+}
+
+func main() {
+	godotenv.Load()
+	dbUrl := os.Getenv("DB_URL")
+
+	db, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		log.Fatal("cannot open database")
+	}
+	dbQueries := database.New(db)
+	sec := os.Getenv("AUTH_SECRET")
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+
+	cfg := config{
+		Db:                 dbQueries,
+		AuthSecret:         sec,
+		GoogleClientID:     googleClientID,
+		GoogleClientSecret: googleClientSecret,
+	}
+
+	authConfig := auth.AuthConfig{
+		Db:                 cfg.Db,
+		AuthSecret:         cfg.AuthSecret,
+		GoogleClientID:     cfg.GoogleClientID,
+		GoogleClientSecret: cfg.GoogleClientSecret,
+	}
+	fmt.Printf("Connecting to database with URL: %s\n", dbUrl)
+
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	// public routes
+	r.Post("/auth/google/callback", authConfig.HandlerGoogleCallback)
+
+	// protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(authConfig.AuthMiddleware)
+		r.Get("/me", authConfig.HandlerGetMe)
+		r.Get("/protected/info", protected.HandlerProtectedInfo)
+		r.Post("/logout", authConfig.HandlerLogout)
+	})
+	fmt.Println("Server starting at port 3000")
+	http.ListenAndServe(":3000", r)
+}
+```
+Now, you can run `go run .` to start the backend server.
+### Done
+Now that the backend server is also done, you can try out both the frontend and backend together! 
+
+
