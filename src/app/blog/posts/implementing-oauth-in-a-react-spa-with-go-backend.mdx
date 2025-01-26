@@ -96,13 +96,23 @@ For the frontend, I will be Vite to create a TypeScript React application. For t
 2. Protected page. The user can only visit this page when he is logged in. Otherwise, he is redirected back to the home page.
 
 You can follow the Tanstack Router docs to see the installation instructions. After creating the React application, we will installing the following packages:
-```bash
-npm i @tanstack/react-query @react-oauth/google@latest
-```
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: 'npm i @tanstack/react-query @react-oauth/google@latest',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
 
 First, let's create a file `src/lib/api.ts` that contains the endpoints of our server:
-
-```typescript
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 // fetches user's information, also used for checking if the user is currently logged in
 export const fetchMe = async () => {
   const res = await fetch("http://localhost:3000/me", {
@@ -129,12 +139,21 @@ export const logout = async () => {
   });
   if (!res.ok) throw new Error("Failed to logout");
   return res.json();
-};
-```
+};`,
+            language: 'typescript'
+        },
+    ]}
+    copyButton
+/>
+
 
 Next, let's create a hook `src/hooks/useAuth.ts` that returns auth information
 
-```typescript
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { fetchMe, logout } from '../lib/api';
 import { type User } from '../types/auth';
@@ -167,21 +186,39 @@ export function useAuth() {
     logout: logoutMutation.mutate,
     isLoggedIn: !!user,
   };
-}
-```
+}`,
+            language: 'typescript'
+        },
+    ]}
+    copyButton
+/>
+
 
 For convenience, I have also defined a type `User` in `src/types/auth.ts`:
-```typescript
+
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 export interface User {
   id: string;
   email: string;
   name: string;
   googleId: string;
-}
-```
+}`,
+            language: 'typescript'
+        },
+    ]}
+    copyButton
+/>
 
 Now, in `main.tsx`, let's add our providers:
-```typescript
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
@@ -214,14 +251,21 @@ if (!rootElement.innerHTML) {
       </QueryClientProvider>
     </GoogleOAuthProvider>
   );
-}
-
-```
+}`,
+            language: 'typescript'
+        },
+    ]}
+    copyButton
+/>
 Note that for production apps, you should store your Google Client ID in `.env` files.
 
 
 Now, for the home page, we have
-```typescript
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 function HomeComponent() {
   const { user, isLoading, logout, isLoggedIn } = useAuth();
   const queryClient = useQueryClient();
@@ -287,11 +331,20 @@ function HomeComponent() {
       )}
     </div>
   );
-}
-```
+}`,
+            language: 'typescript'
+        },
+    ]}
+    copyButton
+/>
+
 
 Then in the protected page, we have
-```typescript
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "../hooks/useAuth";
@@ -315,8 +368,12 @@ function ProtectedComponent() {
       </h3>
     </div>
   );
-}
-```
+}`,
+            language: 'typescript'
+        },
+    ]}
+    copyButton
+/>
 
 Feel free to create a Navbar to link these two pages together.
 
@@ -331,12 +388,24 @@ Note that in the code below, I will add explanation in comments.
 
 #### Installing Dependencies
 Install Goose and SQLC:
-```bash
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 go install github.com/pressly/goose/v3/cmd/goose@latest
-go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-```
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest`,
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
 Then create a `docker-compose.yaml` for our database:
-```yaml
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 version: '3.8'
 
 services:
@@ -350,16 +419,33 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data:/var/lib/postgresql/data
-```
+      - ./data:/var/lib/postgresql/data`,
+            language: 'yaml'
+        },
+    ]}
+    copyButton
+/>
 
 Do `go mod init YOUR_PROJECT_NAME` to initialize your backend. Now, let's also install the other dependencies:
-```bash
-go get github.com/go-chi/chi/v5 github.com/go-chi/cors github.com/golang-jwt/jwt/v5 github.com/google/uuid github.com/joho/godotenv github.com/lib/pq golang.org/x/oauth2
-```
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
+go get github.com/go-chi/chi/v5 github.com/go-chi/cors github.com/golang-jwt/jwt/v5 github.com/google/uuid github.com/joho/godotenv github.com/lib/pq golang.org/x/oauth2`,
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
 
 Create a `sqlc.yaml` file in the root of the backend project folder:
-```yaml
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 version: "2"
 sql:
   - schema: "sql/schema"
@@ -368,15 +454,27 @@ sql:
     gen:
       go:
         out: "internal/database"
-```
+				`,
+            language: 'yaml'
+        },
+    ]}
+    copyButton
+/>
 
 Create a `.env` file also in the root, replacing the Google variables with your own:
-```
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 DB_URL="postgres://postgres:postgres@localhost:5432/example?sslmode=disable"
 AUTH_SECRET="secret"
 GOOGLE_CLIENT_ID="YOUR_CLIENT_ID"
-GOOGLE_CLIENT_SECRET="YOUR_CLIENT_SECRET"
-```
+GOOGLE_CLIENT_SECRET="YOUR_CLIENT_SECRET"`,
+        },
+    ]}
+    copyButton
+/>
 
 Now, do `docker compose up -d` to start the PostgreSQL database.
 
@@ -385,7 +483,11 @@ Now, do `docker compose up -d` to start the PostgreSQL database.
 Let's now write the SQL schema and queries. Create a directory `sql/schema`, and in the directory, create two files.
 
 `001_users.sql`:
-```sql
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 -- +goose Up
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -399,10 +501,19 @@ CREATE TABLE users (
 
 -- +goose Down
 DROP TABLE users;
-```
+				`,
+            language: 'sql'
+        },
+    ]}
+    copyButton
+/>
 
 `002_refresh_tokens.sql`:
-```sql
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 -- +goose Up
 CREATE TABLE refresh_tokens (
     token TEXT PRIMARY KEY,
@@ -415,12 +526,21 @@ CREATE TABLE refresh_tokens (
 
 -- +goose Down
 DROP TABLE refresh_tokens;
-```
+				`,
+            language: 'sql'
+        },
+    ]}
+    copyButton
+/>
 
 Then create a directory `sql/queries`, and create these two files:
 
 `users.sql`:
-```sql
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 -- name: CreateUser :one
 INSERT INTO users(google_id, email, name, picture)
 VALUES (
@@ -445,10 +565,19 @@ WHERE id = $1;
 SELECT *
 FROM users
 WHERE google_id = $1;
-```
+				`,
+            language: 'sql'
+        },
+    ]}
+    copyButton
+/>
 
 `refresh_tokens.sql`:
-```sql
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 -- name: StoreRefreshToken :one
 INSERT INTO refresh_tokens (
     token,
@@ -476,25 +605,53 @@ RETURNING token, user_id, created_at, updated_at, expires_at, revoked_at;
 
 -- name: InvalidateRefreshToken :exec
 DELETE FROM refresh_tokens WHERE user_id = $1;
-```
+				`,
+            language: 'sql'
+        },
+    ]}
+    copyButton
+/>
 
 Then, perform a migration by
-```bash
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 cd sql/schema
 goose postgres postgres://postgres:postgres@localhost:5432/example?sslmode=disable up
-```
+				`,
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
 
 Then go back to the backend root directory and do `sqlc generate` to generate the Go functions corresponding to the SQL queries:
-```bash
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 cd ../../
 sqlc generate
-```
+				`,
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
 You should now see an `internal/database` package. This is generated by SQLC, do not touch the code inside.
 
 
 #### Create utils Package
 Create an `internal/utils` package, and inside create a `json.go` file. This contains helper functions that respond with JSON or error:
-```go
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 package utils
 
 import (
@@ -512,7 +669,7 @@ func RespondWithError(w http.ResponseWriter, code int, msg string, err error) {
 		log.Printf("Responding with 5XX error: %s", msg)
 	}
 	type errorResponse struct {
-		Error string `json:"error"`
+		Error string \`json:"error"\`
 	}
 	RespondWithJSON(w, code, errorResponse{
 		Error: msg,
@@ -542,13 +699,21 @@ func DecodeResponse[T any](resp *http.Response, result *T) error {
 
 	return nil
 }
-
-```
+				`,
+            language: 'go'
+        },
+    ]}
+    copyButton
+/>
 #### Create auth Package
 Create an `internal/auth` package. Inside, create the following files:
 
 `google.go`:
-```go
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 package auth
 
 import (
@@ -564,13 +729,13 @@ import (
 var googleApiUrl string = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 type GoogleUserInfo struct {
-	Sub           string `json:"sub"`
-	Name          string `json:"name"`
-	GivenName     string `json:"given_name"`
-	FamilyName    string `json:"family_name"`
-	Picture       string `json:"picture"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
+	Sub           string \`json:"sub"\`
+	Name          string \`json:"name"\`
+	GivenName     string \`json:"given_name"\`
+	FamilyName    string \`json:"family_name"\`
+	Picture       string \`json:"picture"\`
+	Email         string \`json:"email"\`
+	EmailVerified bool   \`json:"email_verified"\`
 }
 
 func (g GoogleUserInfo) String() string {
@@ -618,11 +783,19 @@ func getUserInfo(accessToken string) (*GoogleUserInfo, error) {
 
 	return &userInfo, nil
 }
-
-```
+				`,
+            language: 'go'
+        },
+    ]}
+    copyButton
+/>
 
 `jwt.go`:
-```go
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 package auth
 
 import (
@@ -717,11 +890,20 @@ func (cfg *AuthConfig) handleRefreshToken(w http.ResponseWriter, r *http.Request
 
 	return nil
 }
+				`,
+            language: 'go'
+        },
+    ]}
+    copyButton
+/>
 
-```
 
 `middleware.go`:
-```go
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 package auth
 
 import (
@@ -764,10 +946,19 @@ func (cfg *AuthConfig) AuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-```
+				`,
+            language: 'go'
+        },
+    ]}
+    copyButton
+/>
 
 `refresh.go`:
-```go
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 package auth
 
 import (
@@ -788,10 +979,19 @@ func MakeRefreshToken() (string, error) {
 	randomString := hex.EncodeToString(random)
 	return randomString, nil
 }
-```
+				`,
+            language: 'go'
+        },
+    ]}
+    copyButton
+/>
 
 and finally `handlers.go`:
-```go
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 package auth
 
 import (
@@ -814,7 +1014,7 @@ type AuthConfig struct {
 
 func (cfg *AuthConfig) HandlerGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Code string `json:"code"`
+		Code string \`json:"code"\`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request", err)
@@ -957,12 +1157,22 @@ func (cfg *AuthConfig) HandlerGetMe(w http.ResponseWriter, r *http.Request) {
 		"picture": user.Picture,
 	})
 }
-```
+				`,
+            language: 'go'
+        },
+    ]}
+    copyButton
+/>
+
 
 
 #### Write main.go
 We now have all the necessary packages. So we can write `main.go`:
-```go
+<CodeBlock className="my-24"
+		compact
+    codeInstances={[
+        {
+            code: `
 package main
 
 import (
@@ -1041,9 +1251,15 @@ func main() {
 	fmt.Println("Server starting at port 3000")
 	http.ListenAndServe(":3000", r)
 }
-```
+				`,
+            language: 'go'
+        },
+    ]}
+    copyButton
+/>
 Now, you can run `go run .` to start the backend server.
 ### Done
 Now that the backend server is also done, you can try out both the frontend and backend together! 
+
 
 
