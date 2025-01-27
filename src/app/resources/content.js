@@ -56,7 +56,7 @@ const home = {
   subline: (
     <>
       I'm Billy, a recent graduate from the University of Waterloo, and a
-      current part time student at Georgia Tech.
+      Computer Science student at Georgia Tech.
     </>
   ),
 };
