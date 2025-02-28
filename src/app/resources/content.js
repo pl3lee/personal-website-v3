@@ -17,8 +17,8 @@ const newsletter = {
   title: <>Subscribe to {person.firstName}'s Newsletter</>,
   description: (
     <>
-      I occasionally write about design, technology, and share thoughts on the
-      intersection of creativity and engineering.
+      I occasionally write about design, technology, and share thoughts on the intersection of
+      creativity and engineering.
     </>
   ),
 };
@@ -55,8 +55,8 @@ const home = {
   headline: <>Full Stack Developer</>,
   subline: (
     <>
-      I'm Billy, a recent graduate from the University of Waterloo, and a
-      Computer Science student at Georgia Tech.
+      I'm Billy, a recent graduate from the University of Waterloo, and a part time Computer Science
+      student at Georgia Tech.
     </>
   ),
 };
@@ -82,19 +82,17 @@ const about = {
     description: (
       <>
         <p>
-          I am a Math graduate from the University of Waterloo, and I am
-          currently working on my Master's in Computer Science at Georgia Tech.
+          I am a Math graduate from the University of Waterloo, and I am currently working on my
+          Master's in Computer Science at Georgia Tech.
         </p>
         <p>
-          My enthusiasm for solving real-world problems led me to create UWPlan,
-          a Next.js-powered degree planning tool that serves over 500 daily
-          users, helping students map their courses and visualize their academic
-          progress.
+          My enthusiasm for solving real-world problems led me to create UWPlan, a Next.js-powered
+          degree planning tool that serves over 500 daily users, helping students map their courses
+          and visualize their academic progress.
         </p>
         <p>
-          I love to tinker with technology. I built a home server using Unraid
-          and have set up numerous self-hosted services for me and my friends'
-          needs.
+          I love to tinker with technology. I built a home server using Unraid and have set up
+          numerous self-hosted services for me and my friends' needs.
         </p>
       </>
     ),
@@ -109,23 +107,22 @@ const about = {
         role: "Lead Developer",
         achievements: [
           <>
-            Led the development of a Next.js-based web platform for a
-            figures-of-speech research group, serving 10+ researchers and
-            enabling user submissions and annotations of figure instances.
+            Led the development of a Next.js-based web platform for a figures-of-speech research
+            group, serving 10+ researchers and enabling user submissions and annotations of figure
+            instances.
           </>,
           <>
-            Revamped the CI/CD pipeline using GitLab, Docker, and Docker
-            Compose, reducing deployment time by 70%.
+            Revamped the CI/CD pipeline using GitLab, Docker, and Docker Compose, reducing
+            deployment time by 70%.
           </>,
           <>
-            Established a robust staging environment to improve testing
-            efficiency and reduce production defects by 90%, ensuring a more
-            reliable and high-quality development workflow.
+            Established a robust staging environment using Docker and Traefik to reduce production
+            defects.
           </>,
           <>
-            Coordinated an Agile workflow, leading weekly stand-ups and code
-            reviews for a team of 5 developers, and implemented a documentation
-            site to maintain comprehensive, up-to-date project documentation.
+            Coordinated an Agile workflow, leading weekly stand-ups and code reviews for a team of 5
+            developers, and implemented a documentation site to maintain comprehensive, up-to-date
+            project documentation.
           </>,
         ],
         images: [],
@@ -136,22 +133,18 @@ const about = {
         role: "Full Stack Developer",
         achievements: [
           <>
-            Implemented advanced features like dynamic highlighting
-            functionality with rich text support using Tiptap.
+            Engineered and optimized a Golang RESTful API using Gin, Gorm, and MySQL by
+            restructuring database queries and utilizing Redis, resulting in a 20% improvement in
+            average query response times.
           </>,
           <>
-            Reduced page load time by 80% by consolidating data retrieval to a
-            single API call with server-side props, utilizing Context API for
-            efficient data distribution, and implementing pagination to minimize
-            data overload.
+            Implemented advanced features like dynamic highlighting functionality with rich text
+            support using Tiptap.
           </>,
           <>
-            Engineered and tested 10 Golang REST endpoints backed by MySQL,
-            improving query response times by 20%.
-          </>,
-          <>
-            Authored comprehensive tests using Jest and React Testing Library,
-            increasing code coverage by 30%.
+            Reduced page load time by 80% by consolidating data retrieval to a single API call with
+            server-side props, utilizing Context API for efficient data distribution, and
+            implementing pagination to improve performance.
           </>,
         ],
         images: [],
@@ -162,14 +155,13 @@ const about = {
         role: "Software Developer Intern",
         achievements: [
           <>
-            Developed and launched a React.js-based demo portal viewed by 10
-            internal stakeholders, effectively showcasing HPE GreenLake
-            solutions and reducing the average demo preparation time by 50%.
+            Developed and launched a React.js-based demo portal viewed by 10 internal stakeholders,
+            effectively showcasing HPE GreenLake solutions and reducing the average demo preparation
+            time by 50%.
           </>,
           <>
-            Automated and optimized demo workflows with Python and Bash scripts,
-            and provisioned VM environments for demonstrations, reducing manual
-            setup time by 80%.
+            Automated and optimized demo workflows with Python and Bash scripts, and provisioned VM
+            environments for demonstrations, reducing manual setup time by 80%.
           </>,
         ],
         images: [],
@@ -180,19 +172,25 @@ const about = {
         role: "Software Developer Intern",
         achievements: [
           <>
-            Tackled the challenge of time-consuming manual product entries on
-            the company's WordPress e-commerce site, previously reliant on a
-            lengthy admin GUI process of around 5 minutes per product.
+            Revolutionized product management on the company’s e-commerce site by developing a
+            Python-based Selenium script, reducing the time for product updates from 5 minutes to 30
+            seconds per product.
+          </>,
+        ],
+        images: [],
+      },
+      {
+        company: "University of Waterloo",
+        timeframe: "Jan 2023 - Apr 2023",
+        role: "Full Stack Developer",
+        achievements: [
+          <>
+            Developed reusable React.js components, reducing code duplication and accelerating UI
+            development.
           </>,
           <>
-            Revolutionized product management by developing a Python-based
-            automation tool using Selenium for the company's WordPress
-            e-commerce site; achieved a 99% reduction in time required for bulk
-            price updates.
-          </>,
-          <>
-            Managed and configured company VPN and NAS storage servers to
-            enhance data security and accessibility.
+            Authored comprehensive tests using Jest and React Testing Library, increasing test
+            coverage by 30%.
           </>,
         ],
         images: [],
@@ -207,8 +205,8 @@ const about = {
         name: "Georgia Institute of Technology",
         description: (
           <>
-            <p>Honours Bachelor of Mathematics</p>
             <p>Master of Science in Computer Science</p>
+            <p>GPA: 4.0/4.0</p>
             <p>Specialization in Computing Systems</p>
           </>
         ),
@@ -219,10 +217,7 @@ const about = {
           <>
             <p>Honours Bachelor of Mathematics</p>
             <p>Dean's Honour (GPA: 3.9/4.0)</p>
-            <p>
-              Double Major in Computational Mathematics and Combinatorics &
-              Optimization
-            </p>
+            <p>Double Major in Computational Mathematics and Combinatorics & Optimization</p>
             <p>Minor in Computer Science</p>
           </>
         ),
@@ -235,9 +230,7 @@ const about = {
     skills: [
       {
         title: "Figma",
-        description: (
-          <>Able to prototype in Figma with Once UI with unnatural speed.</>
-        ),
+        description: <>Able to prototype in Figma with Once UI with unnatural speed.</>,
         // optional: leave the array empty if you don't want to display images
         images: [
           {
@@ -256,9 +249,7 @@ const about = {
       },
       {
         title: "Next.js",
-        description: (
-          <>Building next gen apps with Next.js + Once UI + Supabase.</>
-        ),
+        description: <>Building next gen apps with Next.js + Once UI + Supabase.</>,
         // optional: leave the array empty if you don't want to display images
         images: [
           {
